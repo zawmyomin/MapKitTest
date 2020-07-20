@@ -17,7 +17,12 @@ class ViewController: UITableViewController {
     let defaults = UserDefaults.standard
     let cellId = "cellId"
     
-
+    let barView : UIView = {
+        let view = UIView()
+        view.backgroundColor = .systemRed
+        return view
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -29,6 +34,19 @@ class ViewController: UITableViewController {
         tableView.register(JobTableCell.self, forCellReuseIdentifier: cellId)
         
     }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        self.navigationController?.view.addSubview(barView)
+       
+        barView.backgroundColor = .systemRed
+        barView.anchor(top: nil, left: view.leftAnchor, bottom: view.bottomAnchor, right: view.rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 0, paddingRight: 0, width: view.frame.width, height: 20)
+        tableView.bringSubviewToFront(barView)
+        
+    }
+    
+    
+    
     
     
     override func viewWillAppear(_ animated: Bool) {
@@ -42,14 +60,13 @@ class ViewController: UITableViewController {
             
             let alertController = UIAlertController(title: "Haulio", message: "No Internet Connection", preferredStyle: .alert)
             let action1 = UIAlertAction(title: "Ok", style: .default) { (action:UIAlertAction) in
-                
-                //self.navigationController?.popViewController(animated: true)
+               
             }
             alertController.addAction(action1)
             self.present(alertController, animated: true, completion: nil)
 
         }
-        
+         barView.isHidden = false
   
     }
     
@@ -76,26 +93,45 @@ class ViewController: UITableViewController {
     }
     
     func setupNavigationBar(){
+        
         navigationController?.navigationBar.isHidden = false
         navigationController?.navigationBar.barTintColor = UIColor.red
         navigationItem.title = "HAULIO"
         let textAttributes = [NSAttributedString.Key.foregroundColor:UIColor.white]
         navigationController?.navigationBar.titleTextAttributes = textAttributes
-        
         navigationItem.rightBarButtonItem?.tintColor = .white
         
         let button = UIButton(type: .custom)
         button.setImage(UIImage (named: "signOut"), for: .normal)
-        button.frame = CGRect(x: 0, y: 0, width: 5, height: 5)
+
         let barButtonItem = UIBarButtonItem(customView: button)
         barButtonItem.customView?.widthAnchor.constraint(equalToConstant: 67).isActive = true
         barButtonItem.customView?.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        
         button.addTarget(self, action: #selector(logOut), for: .touchUpInside)
         navigationItem.rightBarButtonItems = [barButtonItem]
+        
+       
     }
     
     @objc func logOut(){
-        signOut()
+        showSignOutAlert()
+    }
+    
+    func showSignOutAlert() {
+        let alert = UIAlertController(title: "Haulio", message: "Are you sure you want to log out?", preferredStyle: UIAlertController.Style.alert)
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertAction.Style.default, handler: { _ in
+            //Cancel Action
+        }))
+        alert.addAction(UIAlertAction(title: "Log Out",
+                                      style: UIAlertAction.Style.destructive,
+                                      handler: {(_: UIAlertAction!) in
+                                        //Sign out action
+                                        self.signOut()
+                                        
+        }))
+        self.present(alert, animated: true, completion: nil)
     }
     
     func signOut(){
@@ -140,7 +176,6 @@ class ViewController: UITableViewController {
         let number:Int = location[indexPath.row].job_id!
         let jobNumber:String = String(number)
         let address:String = location[indexPath.row].address!
-        
         let geoDic = location[indexPath.row].geolocation
     
         let longValue = geoDic!["longitude"]
@@ -160,15 +195,18 @@ class ViewController: UITableViewController {
         return 130
     }
     
+    
+    
 
 }
 
 extension ViewController : JobNumberDelegate{
     func passData(name: String, number: String, lat: Double, long: Double, address: String) {
         navigationItem.title = ""
-        let vc = MapKitVC()//MapVC()
+        let vc = MapKitVC()
         vc.getJobInfo(number: number, address: address, lat: lat, lon: long, name: name)
         navigationController?.pushViewController(vc, animated: true)
+        barView.isHidden = true
     }
     
     

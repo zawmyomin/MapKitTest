@@ -97,6 +97,12 @@ class MapKitVC: UIViewController,MKMapViewDelegate {
         return btn
     }()
     
+    let barView : UIView = {
+           let view = UIView()
+           view.backgroundColor = .systemRed
+           return view
+       }()
+    
     
     var searchBar: UISearchBar!
     
@@ -136,24 +142,16 @@ class MapKitVC: UIViewController,MKMapViewDelegate {
     }
     
     func setupUserInfoView(){
-        var yValue : CGFloat? = 0.0
-           
-               if UIDevice.current.hasNotch{
-                   yValue = 85.0
-               }else{
-                   yValue = 65.0
-                 
-               }
+        
         view.addSubview(subView)
-        subView.anchor(top: view.topAnchor, left: view.leftAnchor, bottom: nil, right: view.rightAnchor, paddingTop: yValue!, paddingLeft: 0, paddingBottom: 0, paddingRight: 0, width: 0, height: 56)
+        subView.anchor(top: mapContainer.topAnchor, left: view.leftAnchor, bottom: nil, right: view.rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 0, paddingRight: 0, width: 0, height: 56)
         subView.layer.shadowOpacity = 5
         subView.layer.shadowOffset = .zero
         
           view.addSubview(infoView)
-          infoView.layer.cornerRadius = 4
           infoView.layer.shadowOpacity = 0.2
           infoView.layer.shadowOffset = .zero
-          infoView.anchor(top: nil, left: view.leftAnchor, bottom: view.bottomAnchor, right: view.rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 10, paddingRight: 0, width: 0, height: 100)
+          infoView.anchor(top: nil, left: view.leftAnchor, bottom: view.bottomAnchor, right: view.rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 20, paddingRight: 0, width: 0, height: 100)
           
           infoView.addSubview(imgUser)
           imgUser.clipsToBounds = true
@@ -176,25 +174,63 @@ class MapKitVC: UIViewController,MKMapViewDelegate {
       }
     
     func setupNavigation(){
-           navigationItem.title = "HAULIO"
+            navigationItem.title = "HAULIO"
+            
            let button = UIButton(type: .custom)
            button.setImage(UIImage (named: "signOut"), for: .normal)
-           button.frame = CGRect(x: 0, y: 0, width: 5, height: 5)
            let barButtonItem = UIBarButtonItem(customView: button)
            barButtonItem.customView?.widthAnchor.constraint(equalToConstant: 67).isActive = true
            barButtonItem.customView?.heightAnchor.constraint(equalToConstant: 50).isActive = true
            button.addTarget(self, action: #selector(goLogOut), for: .touchUpInside)
            navigationItem.rightBarButtonItems = [barButtonItem]
-            navigationItem.rightBarButtonItem?.tintColor = .white
-            navigationItem.leftBarButtonItem?.tintColor = .white
+        
+        let leftBtn = UIButton(type: .custom)
+        leftBtn.setImage(UIImage(named: "back"), for: .normal)
+        
+        leftBtn.contentMode = .scaleToFill
+        leftBtn.contentEdgeInsets = UIEdgeInsets(top: 0, left: -30, bottom: 0, right: 0)
+        leftBtn.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        let leftbarBtn = UIBarButtonItem(customView: leftBtn)
+        leftbarBtn.customView?.widthAnchor.constraint(equalToConstant: 30).isActive = true
+        leftbarBtn.customView?.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        navigationItem.leftBarButtonItems = [leftbarBtn]
+        
+        view.addSubview(barView)
+        barView.anchor(top: nil, left: view.leftAnchor, bottom: view.bottomAnchor, right: view.rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 0, paddingRight: 0, width: 0, height: 20)
+        
        }
+    
+    @objc func goBack(){
+        navigationController?.popViewController(animated: true)
+    }
        
        
        @objc func goLogOut(){
-           navigationController?.popViewController(animated: false)
-               GIDSignIn.sharedInstance()?.signOut()
-               defaults.removeObject(forKey: "loginStatus")
+          showSignOutAlert()
        }
+    
+    
+    func showSignOutAlert() {
+          let alert = UIAlertController(title: "Haulio", message: "Are you sure you want to log out?", preferredStyle: UIAlertController.Style.alert)
+
+          alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertAction.Style.default, handler: { _ in
+              //Cancel Action
+          }))
+          alert.addAction(UIAlertAction(title: "Log Out",
+                                        style: UIAlertAction.Style.destructive,
+                                        handler: {(_: UIAlertAction!) in
+                                          //Sign out action
+                                          self.signOut()
+                                          
+          }))
+          self.present(alert, animated: true, completion: nil)
+      }
+    
+    func signOut(){
+        navigationController?.popViewController(animated: false)
+                      GIDSignIn.sharedInstance()?.signOut()
+                      defaults.removeObject(forKey: "loginStatus")
+    }
     
     func setupSearchBar(){
         searchBar = UISearchBar()
@@ -276,7 +312,8 @@ class MapKitVC: UIViewController,MKMapViewDelegate {
     
     func setupTableView(){
         view.addSubview(tableView)
-        tableView.anchor(top: subView.bottomAnchor, left: view.leftAnchor, bottom: nil, right: view.rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 0, paddingRight: 0, width: 0, height: 200)
+        
+        tableView.anchor(top: subView.bottomAnchor, left: view.leftAnchor, bottom: nil, right: view.rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 0, paddingRight: 0, width: 0, height: 120)
         tableView.isHidden = true
         tableView.register(SearchCell.self, forCellReuseIdentifier: cellId)
         
@@ -293,9 +330,12 @@ class MapKitVC: UIViewController,MKMapViewDelegate {
 //                print("Map Data",mapItems)
                 self.landmarks = mapItems.map{
                     LandMark(placemark: $0.placemark)
+                    
                 }
+                
              self.tableView.reloadData()
-
+          
+                               
             }
             
         }
@@ -424,6 +464,8 @@ extension MapKitVC: UITableViewDelegate,UITableViewDataSource{
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 40
     }
+    
+    
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         searchView.isHidden = false
